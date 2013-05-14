@@ -12,7 +12,7 @@ DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    ('Ben Adida', 'ben@adida.net'),
+    ('Adam McCarthy', 'adam.mccarthy@inria.fr'),
 )
 
 MANAGERS = ADMINS
@@ -20,7 +20,9 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'helios'
+        'NAME': 'hawk2',
+	'USER': 'postgres',
+	'PASSWORD': 'postgres'
     }
 }
 
@@ -29,7 +31,7 @@ DATABASES = {
 # although not all choices may be available on all operating systems.
 # If running in a Windows environment this must be set to the same as your
 # system time zone.
-TIME_ZONE = 'America/Los_Angeles'
+TIME_ZONE = 'Europe/Paris'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -115,18 +117,18 @@ LOGOUT_ON_CONFIRMATION = True
 
 # The two hosts are here so the main site can be over plain HTTP
 # while the voting URLs are served over SSL.
-URL_HOST = get_from_env("URL_HOST", "http://localhost:8000")
+URL_HOST = get_from_env("URL_HOST", "http://128.93.0.4:8000")
 
 # IMPORTANT: you should not change this setting once you've created
 # elections, as your elections' cast_url will then be incorrect.
-# SECURE_URL_HOST = "https://localhost:8443"
-SECURE_URL_HOST = get_from_env("SECURE_URL_HOST", "http://localhost:8000")
+# SECURE_URL_HOST = "https://128.93.0.4:8443"
+SECURE_URL_HOST = get_from_env("SECURE_URL_HOST", "http://128.93.0.4:8000")
 
 # this additional host is used to iframe-isolate the social buttons,
 # which usually involve hooking in remote JavaScript, which could be
 # a security issue. Plus, if there's a loading issue, it blocks the whole
 # page. Not cool.
-SOCIALBUTTONS_URL_HOST= get_from_env("SOCIALBUTTONS_URL_HOST", "http://localhost:8000")
+SOCIALBUTTONS_URL_HOST= get_from_env("SOCIALBUTTONS_URL_HOST", "http://128.93.0.4:8000")
 
 # election stuff
 SITE_TITLE = get_from_env('SITE_TITLE', 'Helios Election Server')
@@ -172,7 +174,7 @@ LINKEDIN_API_KEY = ''
 LINKEDIN_API_SECRET = ''
 
 # email server
-EMAIL_HOST = get_from_env('EMAIL_HOST', 'localhost')
+EMAIL_HOST = get_from_env('EMAIL_HOST', '128.93.0.4')
 EMAIL_PORT = 2525
 EMAIL_HOST_USER = get_from_env('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = get_from_env('EMAIL_HOST_PASSWORD', '')
@@ -185,13 +187,19 @@ logging.basicConfig(
     format = '%(asctime)s %(levelname)s %(message)s'
 )
 
-# BROKER_URL = "django://"
+BROKER_URL = "django://"
 
 # set up django-celery
-BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
-CELERY_RESULT_DBURI = DATABASES['default']
-import djcelery
-djcelery.setup_loader()
+#BROKER_BACKEND = "djkombu.transport.DatabaseTransport"
+
+#BROKER_HOST = "localhost"
+#BROKER_PORT = 5672
+#BROKER_USER = "guest"
+#BROKER_PASSWORD = "guest"
+#BROKER_VHOST = "/"
+
+#import djcelery
+#djcelery.setup_loader()
 
 
 # for testing

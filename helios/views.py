@@ -915,7 +915,7 @@ def one_election_archive(request, election):
 
   return HttpResponseRedirect(reverse(one_election_view, args=[election.uuid]))
 
-# changed from admin to view because 
+# changed from admin to view becausfsae 
 # anyone can see the questions, the administration aspect is now
 # built into the page
 @election_view()
@@ -925,6 +925,15 @@ def one_election_questions(request, election):
   admin_p = security.user_can_admin_election(user, election)
 
   return render_template(request, 'election_questions', {'election': election, 'questions_json' : questions_json, 'admin_p': admin_p})
+
+@election_view()
+def one_auction_parameters(request, election):
+  questions_json = utils.to_json(election.questions)
+  user = get_user(request)
+  admin_p = security.user_can_admin_election(user, election)
+
+  return render_template(request, 'auction_parameters', {'election': election, 'questions_json' : questions_json, 'admin_p': admin_p})
+
 
 def _check_eligibility(election, user):
   # prevent password-users from signing up willy-nilly for other elections, doesn't make sense
@@ -963,6 +972,17 @@ def one_election_save_questions(request, election):
 
   # always a machine API
   return SUCCESS
+
+@election_admin(frozen=False)
+def one_auction_save_questions(request, election):
+  check_csrf(request)
+  
+  election.questions = utils.from_json(request.POST['questions_json'])
+  election.save()
+
+  # always a machine API
+  return SUCCESS
+
 
 @transaction.commit_on_success
 @election_admin(frozen=False)

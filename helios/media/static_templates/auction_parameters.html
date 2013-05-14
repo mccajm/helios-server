@@ -1,0 +1,75 @@
+{#foreach $T.questions as question}
+<div id="q_view_{$T.question$index}">
+<h4>
+{#if $T.admin_p}[
+{#if $T.question$index > 0}<a href="javascript:question_move_up({$T.question$index});">^</a>]&nbsp;[{#/if}
+<a href="javascript:question_remove({$T.question$index})">x</a>] [<a href="javascript:question_edit({$T.question$index})">edit</a>] {#/if}{$T.question$index + 1}. {$T.question.question} ({$T.question.choice_type}, select between {$T.question.min} and {#if $T.question.max != null}{$T.question.max}{#else}unlimited{#/if} answers, result type {$T.question.result_type}.)</h4>
+<ul>
+{#foreach $T.question.answers as answer}
+<li> {$T.answer}</li>
+{#/for}
+</ul>
+</div>
+<div id="q_edit_{$T.question$index}" style="display:none;">
+<form id="question_edit_{$T.question$index}_form" onsubmit="question_update({$T.question$index}, this); return false;" action="#">
+<p>
+<!--
+  Type of Question:
+  <select name="choice_type">
+    <option selected>approval</option>
+  </select>
+-->
+<input type="hidden" name="choice_type" value="approval" />
+<b>{$T.question$index + 1}.</b> &nbsp;&nbsp;&nbsp;Minimum Price: &nbsp;&nbsp;
+<input type="text" name="min" size="10" />
+
+&nbsp;&nbsp; Maximum Price: &nbsp;&nbsp;
+
+<input type="text" name="max" size="10" />
+
+&nbsp;&nbsp;
+&nbsp;&nbsp;
+Bid Interval:&nbsp;
+<input type="text" name="result_text" size="10" />
+
+</p>
+
+<p>&nbsp;&nbsp;&nbsp;Item Name: <input type="text" name="question" size="70" /></p>
+<p><input type="submit" value="update item" /> &nbsp; <input type="reset" value="cancel" onclick="question_edit_cancel({$T.question$index});" /></p>
+
+</form>
+</div>
+{#else}
+no items yet
+{#/for}
+
+{#if $T.admin_p}
+<h4>Add an item:</h4>
+<form id="question_form" onsubmit="question_add(this); return false;" action="#">
+<p>
+<!--
+  Type of Question:
+  <select name="choice_type">
+    <option selected>approval</option>
+  </select>
+-->
+<input type="hidden" name="choice_type" value="approval" />
+&nbsp;&nbsp;&nbsp;Minimum Bid: &nbsp;&nbsp;
+<input type="text" name="min" size="10" />
+
+&nbsp;&nbsp; Maximum Bid: &nbsp;&nbsp;
+
+<input type="text" name="max" size="10" />
+
+&nbsp;&nbsp;
+&nbsp;&nbsp;
+Bid Interval:&nbsp;
+<input type="text" name="result_text" size="10" />
+
+</p>
+
+<p>&nbsp;&nbsp;&nbsp;Item Name: <input type="text" name="question" size="70" /></p>
+<p><input type="submit" value="add item" /></p>
+
+{#/if}
+</form>

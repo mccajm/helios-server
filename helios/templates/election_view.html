@@ -66,7 +66,12 @@ this {{election.election_type}} is <u>not</u> featured on the front page.
 
 
 <p align="center" style="font-size: 1.5em;">
-<a href="{% url helios.views.one_election_questions election.uuid %}">questions ({% if election.questions %}{{election.questions|length}}{% else %}0{% endif %})</a>
+{% if election.election_type == 'auction' %}
+	<a href="{% url helios.views.one_auction_parameters election.uuid %}">items
+{% else %} 
+	<a href="{% url helios.views.one_election_questions election.uuid %}">questions
+{% endif %}
+	({% if election.questions %}{{election.questions|length}}{% else %}0{% endif %})</a>
 &nbsp;&nbsp;|&nbsp;&nbsp;
 <a href="{% url helios.views.voters_list_pretty election.uuid %}">voters &amp; ballots</a>
 &nbsp;&nbsp;|&nbsp;&nbsp;
