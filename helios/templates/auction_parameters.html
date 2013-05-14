@@ -38,11 +38,9 @@
       if (form.max.value != "")
         max = parseInt(form.max.value);
       var interval = parseInt(form.result_text.value)
-      debugger;
       for (var i=0; i <= (max-min)/interval; i++){
-          new_q.answers[i] = min+(i*interval);
+          new_q.answers[i] = max-(i*interval);
           new_q.answer_urls[i] = null;
-          debugger;
       }
       
      return new_q;

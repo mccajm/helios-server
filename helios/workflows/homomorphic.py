@@ -273,7 +273,10 @@ class Tally(WorkflowObject):
 
     if election:
       self.init_election(election)
-      self.tally = [[0 for a in q['answers']] for q in self.questions]
+      if election.election_type == 'auction':
+        self.tally = [[] for q in self.questions]
+      else:
+        self.tally = [[[0 for a in q['answers']]] for q in self.questions]
     else:
       self.questions = None
       self.public_key = None
@@ -296,6 +299,7 @@ class Tally(WorkflowObject):
       self.add_vote(vote, verify_p)
     
   def add_vote(self, encrypted_vote, verify_p=True):
+    print "NORMAL TALLYING"
     # do we verify?
     if verify_p:
       if not encrypted_vote.verify(self.election):
@@ -314,6 +318,31 @@ class Tally(WorkflowObject):
         self.tally[question_num][answer_num] = encrypted_vote.encrypted_answers[question_num].choices[answer_num] * self.tally[question_num][answer_num]
 
     self.num_tallied += 1
+
+  def find_winning_bid(self, voter_set, verify_p=True):
+    print "FINDING WINNING BID"
+    encrypted_votes = [voter.vote for voter in voter_set if voter.vote]
+
+    # for each question
+    for question_num in range(len(self.questions)):
+      question = self.questions[question_num]
+      answers = question['answers']
+
+      winner_found = None
+      # for each possible answer to each question
+      for answer_num in range(len(answers)):
+        for encrypted_vote in encrypted_votes:
+          # do we verify?
+          if verify_p:
+            if not encrypted_vote.verify(self.election):
+              raise Exception('Bad Vote')
+
+          # do the homomorphic addition into the tally
+          enc_vote_choice = encrypted_vote.encrypted_answers[question_num].choices[answer_num]
+          enc_vote_choice.pk = self.public_key
+          self.tally[question_num][answer_num] = encrypted_vote.encrypted_answers[question_num].choices[answer_num] * self.tally[question_num][answer_num]
+
+        self.num_tallied += 1
 
   def decryption_factors_and_proofs(self, sk):
     """

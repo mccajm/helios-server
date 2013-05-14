@@ -1013,10 +1013,13 @@ def one_election_compute_tally(request, election):
   """
   tallying is done all at a time now
   """
+  print "WE HAVE BEEN ASKED TO TALLY"
   if not _check_election_tally_type(election):
+    print "NOT ELECTION TALLY TYPE"
     return HttpResponseRedirect(reverse(one_election_view,args=[election.election_id]))
 
   if request.method == "GET":
+    print "GET IT!"
     return render_template(request, 'election_compute_tally', {'election': election})
   
   check_csrf(request)
@@ -1027,6 +1030,7 @@ def one_election_compute_tally(request, election):
   election.tallying_started_at = datetime.datetime.utcnow()
   election.save()
 
+  print "START A TALLY TASK"
   tasks.election_compute_tally.delay(election_id = election.id)
 
   return HttpResponseRedirect(reverse(one_election_view,args=[election.uuid]))
