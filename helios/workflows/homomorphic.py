@@ -273,10 +273,7 @@ class Tally(WorkflowObject):
 
     if election:
       self.init_election(election)
-      if election.election_type == 'auction':
-        self.tally = [[] for q in self.questions]
-      else:
-        self.tally = [[[0 for a in q['answers']]] for q in self.questions]
+      self.tally = [[0 for a in q['answers']] for q in self.questions]
     else:
       self.questions = None
       self.public_key = None
@@ -322,7 +319,7 @@ class Tally(WorkflowObject):
   def find_winning_bid(self, voter_set, verify_p=True):
     print "FINDING WINNING BID"
     encrypted_votes = [voter.vote for voter in voter_set if voter.vote]
-
+    print repr(encrypted_votes)
     # for each question
     for question_num in range(len(self.questions)):
       question = self.questions[question_num]
@@ -332,6 +329,7 @@ class Tally(WorkflowObject):
       # for each possible answer to each question
       for answer_num in range(len(answers)):
         for encrypted_vote in encrypted_votes:
+          print repr(encrypted_vote)
           # do we verify?
           if verify_p:
             if not encrypted_vote.verify(self.election):
@@ -340,6 +338,8 @@ class Tally(WorkflowObject):
           # do the homomorphic addition into the tally
           enc_vote_choice = encrypted_vote.encrypted_answers[question_num].choices[answer_num]
           enc_vote_choice.pk = self.public_key
+          print type(encrypted_vote.encrypted_answers[question_num].choices[answer_num])
+          print type(self.tally[question_num][answer_num])
           self.tally[question_num][answer_num] = encrypted_vote.encrypted_answers[question_num].choices[answer_num] * self.tally[question_num][answer_num]
 
         self.num_tallied += 1
@@ -442,12 +442,22 @@ class Tally(WorkflowObject):
     for q_num, q in enumerate(self.tally):
       q_result = []
 
+      winner_found = False
       for a_num, a in enumerate(q):
-        # coalesce the decryption factors into one list
-        dec_factor_list = [df[q_num][a_num] for df in decryption_factors]
-        raw_value = self.tally[q_num][a_num].decrypt(dec_factor_list, public_key)
-        
-        q_result.append(dlog_table.lookup(raw_value))
+        if winner_found:
+          q_result.append(0)
+        else:
+          # coalesce the decryption factors into one list
+          dec_factor_list = [df[q_num][a_num] for df in decryption_factors]
+          raw_value = self.tally[q_num][a_num].decrypt(dec_factor_list, public_key)
+          
+          plaintext = dlog_table.lookup(raw_value)
+          q_result.append(plaintext)
+
+          print type(plaintext)
+          # TODO FIX if self.election.election_type == 'auction':
+          if plaintext > 0: # we found a bid so lets stop here
+            winner_found = True
 
       result.append(q_result)
     
