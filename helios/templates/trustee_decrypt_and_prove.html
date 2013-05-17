@@ -62,9 +62,9 @@ function do_tally() {
   $('#waiting_div').show();
   
   var secret_key = get_secret_key();
-  
+  debugger;
   var factors_and_proof = decrypt_and_prove_tally(TALLY, ELECTION_PK, secret_key);
-  
+  debugger;
   // json'ify it
   var factors = factors_and_proof.decryption_factors
   var decryption_proofs = $(factors_and_proof.decryption_proofs).map(function(i, q_proof) {

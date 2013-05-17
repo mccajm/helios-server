@@ -543,7 +543,13 @@ BOOTH.cast_ballot = function() {
 };
 
 BOOTH.show_receipt = function() {
-    UTILS.open_window_with_content("Your smart ballot tracker for " + BOOTH.election.name + ": " + BOOTH.encrypted_ballot_hash);
+  // FIXME TODO differentiate for auctions
+  var randomness = "";
+  for(var i = 0; i < BOOTH.encrypted_answers.length; i++) {
+    randomness += "Question " + i+1 + ": " + $.toJSON(BOOTH.encrypted_answers[i].randomness) + ".  "
+  }
+
+  UTILS.open_window_with_content("Your smart ballot tracker for " + BOOTH.election.name + ": " + BOOTH.encrypted_ballot_hash + '.\n\nYour randomness values are: ' + randomness);
 };
 
 BOOTH.do_done = function() {

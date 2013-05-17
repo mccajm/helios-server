@@ -174,8 +174,8 @@ LINKEDIN_API_KEY = ''
 LINKEDIN_API_SECRET = ''
 
 # email server
-EMAIL_HOST = get_from_env('EMAIL_HOST', '128.93.0.4')
-EMAIL_PORT = 2525
+EMAIL_HOST = get_from_env('EMAIL_HOST', 'mx2.adammccarthy.co.uk')
+EMAIL_PORT = 25
 EMAIL_HOST_USER = get_from_env('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = get_from_env('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = False

@@ -1039,7 +1039,9 @@ def one_election_compute_tally(request, election):
 def trustee_decrypt_and_prove(request, election, trustee):
   if not _check_election_tally_type(election) or election.encrypted_tally == None:
     return HttpResponseRedirect(reverse(one_election_view,args=[election.uuid]))
-    
+
+  print repr(election.encrypted_tally), type(election.encrypted_tally)
+
   return render_template(request, 'trustee_decrypt_and_prove', {'election': election, 'trustee': trustee})
   
 @election_view(frozen=True)
