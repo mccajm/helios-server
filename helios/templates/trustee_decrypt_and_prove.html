@@ -2,6 +2,7 @@
 
 {% block content %}
 <script language="javascript">
+var answer = 0;
 
 $(document).ready(function() {
     $('#result_div').hide();
@@ -13,7 +14,7 @@ $(document).ready(function() {
     BigInt.setup(function() {
         ELECTION_JSON = {{election.toJSON|safe}};
         ELECTION_PK = ElGamal.PublicKey.fromJSONObject(ELECTION_JSON['public_key']);
-        TALLY = HELIOS.Tally.fromJSONObject({{election.encrypted_tally.toJSON|safe}}, ELECTION_PK);   
+        TALLY = HELIOS.Tally.fromJSONObject({{election.encrypted_tally.toJSON|safe}}, ELECTION_PK);
         $('#sk_section').show();
     });
 });
@@ -62,9 +63,8 @@ function do_tally() {
   $('#waiting_div').show();
   
   var secret_key = get_secret_key();
-  debugger;
   var factors_and_proof = decrypt_and_prove_tally(TALLY, ELECTION_PK, secret_key);
-  debugger;
+
   // json'ify it
   var factors = factors_and_proof.decryption_factors
   var decryption_proofs = $(factors_and_proof.decryption_proofs).map(function(i, q_proof) {
@@ -76,33 +76,40 @@ function do_tally() {
   var factors_and_proofs = {'decryption_factors': factors, 'decryption_proofs': decryption_proofs};
   var factors_and_proofs_json = $.toJSON(factors_and_proofs);
   
-  // clear stuff
-  secret_key = null;
-  $('#sk_textarea').val("");
-  
+
   // display the result in a text area.
   $('#waiting_div').hide();
   
   $('#result_textarea').html(factors_and_proofs_json);
   $('#result_div').show();
   $('#first-step-success').show();
+
+  submit_result();
 }
 
 function submit_result() {
-  $('#result_div').hide();
-  $('#waiting_submit_div').show();
+  //$('#result_div').hide();
+  //$('#waiting_submit_div').show();
 
   var result = $('#result_textarea').val();
-  
   // do the post
   $.ajax({
       type: 'POST',
-      url: "./upload-decryption",
-      data: {'factors_and_proofs': result},
+      url: "../../upload-decryption",
+      data: {'factors_and_proofs': result,
+             'answer': ++answer },
       success: function(result) {
         $('#waiting_submit_div').hide();
         if (result != "FAILURE") {
-          $('#done_div').show();
+          TALLY = HELIOS.Tally.fromJSONObject(JSON.parse(result), ELECTION_PK);
+          if (TALLY.tally.length > 0) {
+            do_tally();
+          } else {
+            // clear stuff
+            secret_key = null;
+            $('#sk_textarea').val("");
+            $('#done_div').show();
+          }
         } else {
           alert('verification failed, you probably used the wrong key.');
           reset();

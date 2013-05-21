@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     (r'^/trustees/(?P<trustee_uuid>[^/]+)/check-sk$', trustee_check_sk),
     (r'^/trustees/(?P<trustee_uuid>[^/]+)/upoad-pk$', trustee_upload_pk),
     (r'^/trustees/(?P<trustee_uuid>[^/]+)/decrypt-and-prove$', trustee_decrypt_and_prove),
+    (r'^/trustees/(?P<trustee_uuid>[^/]+)/answer/(?P<answer>\d+)/decrypt-and-prove-segment$', trustee_decrypt_and_prove_segment),
     (r'^/trustees/(?P<trustee_uuid>[^/]+)/upload-decryption$', trustee_upload_decryption),
     
     # election voting-process actions

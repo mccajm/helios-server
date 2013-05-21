@@ -726,7 +726,6 @@ class Tally(HeliosObject):
     decryption_proofs are the corresponding proofs
     public_key is, of course, the public key of the trustee
     """
-    
     # go through each one
     for q_num, q in enumerate(self.tally):
       for a_num, answer_tally in enumerate(q):

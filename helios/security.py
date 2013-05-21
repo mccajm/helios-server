@@ -179,6 +179,19 @@ def trustee_check(func):
   
   return update_wrapper(trustee_check_wrapper, func)
 
+def trustee_check_segment(func):
+  def trustee_check_wrapper(request, election_uuid, trustee_uuid, answer, *args, **kwargs):
+    election = get_election_by_uuid(election_uuid)
+    
+    trustee = Trustee.get_by_election_and_uuid(election, trustee_uuid)
+    
+    if trustee == get_logged_in_trustee(request):
+      return func(request, election, trustee, answer, *args, **kwargs)
+    else:
+      raise PermissionDenied()
+  
+  return update_wrapper(trustee_check_wrapper, func)
+
 def can_create_election(request):
   user = get_user(request)
   if not user:
