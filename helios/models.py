@@ -383,7 +383,26 @@ class Election(HeliosModel):
     self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
 
     self.save()
-  
+
+  def combine_decryptions_iterative(self, answer, question=0):
+    """
+    combine decryption results for a particular question and answer
+    """
+    # gather the decryption factors
+    trustees = Trustee.get_by_election(self)
+    decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
+    
+    self.result = (self.result or [[]])
+    try:
+      self.result[q].append(self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question))
+    except IndexError:
+      self.result.append([])
+      self.result[q].append(self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question))
+
+    self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
+
+    self.save()
+
   def generate_voters_hash(self):
     """
     look up the list of voters, make a big file, and hash it
@@ -1128,6 +1147,18 @@ class Trustee(HeliosModel):
   @property
   def datatype(self):
     return self.election.datatype.replace('Election', 'Trustee')    
+    
+  def verify_decryption_proofs_iterative(self, answer, question=0):
+    """
+    verify that the decryption proofs match the tally for the election
+    """
+    print "verify_decryption_proofs_iterative 1", self.decryption_factors, self.decryption_proofs, self.public_key, algs.EG_fiatshamir_challenge_generator, answer, question
+    print dir(self.election.encrypted_tally)
+    # verify_decryption_proofs(self, decryption_factors, decryption_proofs, public_key, challenge_generator):
+    re = self.election.encrypted_tally.verify_decryption_proofs_iterative(self.decryption_factors, self.decryption_proofs, self.public_key, algs.EG_fiatshamir_challenge_generator, answer, question)
+    print "re computed"
+    print re
+    return re
     
   def verify_decryption_proofs(self):
     """

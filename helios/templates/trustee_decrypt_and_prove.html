@@ -50,7 +50,7 @@ function decrypt_and_prove_tally(tally, public_key, secret_key) {
            decryption_proofs[q_num][choice_num] = one_choice_result.decryption_proof;
         });
     });
-    
+
     return {'decryption_factors': decryption_factors, 'decryption_proofs' : decryption_proofs};
 }
 
@@ -80,7 +80,7 @@ function do_tally() {
   // display the result in a text area.
   $('#waiting_div').hide();
   
-  $('#result_textarea').html(factors_and_proofs_json);
+  $('#result_textarea').append(factors_and_proofs_json);
   $('#result_div').show();
   $('#first-step-success').show();
 
@@ -89,7 +89,7 @@ function do_tally() {
 
 function submit_result() {
   //$('#result_div').hide();
-  //$('#waiting_submit_div').show();
+  $('#waiting_submit_div').show();
 
   var result = $('#result_textarea').val();
   // do the post
@@ -99,16 +99,20 @@ function submit_result() {
       data: {'factors_and_proofs': result,
              'answer': ++answer },
       success: function(result) {
-        $('#waiting_submit_div').hide();
         if (result != "FAILURE") {
-          TALLY = HELIOS.Tally.fromJSONObject(JSON.parse(result), ELECTION_PK);
-          if (TALLY.tally.length > 0) {
-            do_tally();
-          } else {
+          if (result == "SUCCESS") {
             // clear stuff
             secret_key = null;
             $('#sk_textarea').val("");
             $('#done_div').show();
+            $('#waiting_submit_div').hide();
+          } else if (result == "WAIT") {
+            setTimeout(function() {
+              submit_result();
+            }, 5000)
+          } else {
+            TALLY = HELIOS.Tally.fromJSONObject(JSON.parse(result), ELECTION_PK);
+            do_tally();
           }
         } else {
           alert('verification failed, you probably used the wrong key.');

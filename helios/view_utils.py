@@ -30,6 +30,8 @@ SUCCESS = HttpResponse("SUCCESS")
 # FIXME: error code
 FAILURE = HttpResponse("FAILURE")
 
+WAIT = HttpResponse("WAIT")
+
 ##
 ## template abstraction
 ##

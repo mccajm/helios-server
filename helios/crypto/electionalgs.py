@@ -719,6 +719,22 @@ class Tally(HeliosObject):
       decryption_proof.append(question_proof)
     
     return decrypted_tally, decryption_proof
+
+  def verify_decryption_proofs_iterative(self, decryption_factors, decryption_proofs, public_key, challenge_generator, answer, question=0):
+    """
+    decryption_factors is a list of lists of dec factors
+    decryption_proofs are the corresponding proofs
+    public_key is, of course, the public key of the trustee
+    """
+    print "vdivdi"
+    # parse the proof
+    proof = algs.EGZKProof.fromJSONDict(decryption_proofs[question][answer])
+    print "vd proof: ", proof
+    # check that g, alpha, y, dec_factor is a DH tuple
+    if not proof.verify(public_key.g, answer_tally.alpha, public_key.y, int(decryption_factors[question][answer]), public_key.p, public_key.q, challenge_generator):
+      return False
+    
+    return True
   
   def verify_decryption_proofs(self, decryption_factors, decryption_proofs, public_key, challenge_generator):
     """
@@ -766,6 +782,21 @@ class Tally(HeliosObject):
       result.append(q_result)
     
     return result
+
+  def decrypt_from_factors_iterative(self, dec_factor_list, public_key, answer, question=0):
+    """
+    decrypt a particular value in a tally given decryption factors
+    
+    The decryption factors are a list of decryption factor sets, for each trustee.
+    Each decryption factor set is a list of lists of decryption factors (questions/answers).
+    """
+    # pre-compute a dlog table
+    dlog_table = DLogTable(base = public_key.g, modulus = public_key.p)
+    dlog_table.precompute(self.num_tallied)
+
+    raw_value = self.tally[question][answer].decrypt(dec_factor_list, public_key)
+
+    return dlog_table.lookup(raw_value)
 
   def _process_value_in(self, field_name, field_value):
     if field_name == 'tally':
