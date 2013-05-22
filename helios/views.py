@@ -1142,6 +1142,7 @@ def trustee_upload_decryption(request, election, trustee_uuid):
       return FAILURE
 
     # Do we need to send anything new?
+    answer = answer + 1
     print answer, len(election.encrypted_tally.tally[0])
     if answer < len(election.encrypted_tally.tally[0]):  # If we're still tallying
       if answer != 0 and election.encrypted_tally.result[0][answer-1] == None:

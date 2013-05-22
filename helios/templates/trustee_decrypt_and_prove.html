@@ -97,7 +97,7 @@ function submit_result() {
       type: 'POST',
       url: "../../upload-decryption",
       data: {'factors_and_proofs': result,
-             'answer': ++answer },
+             'answer': answer },
       success: function(result) {
         if (result != "FAILURE") {
           if (result == "SUCCESS") {
@@ -111,6 +111,7 @@ function submit_result() {
               submit_result();
             }, 5000)
           } else {
+            answer++;
             TALLY = HELIOS.Tally.fromJSONObject(JSON.parse(result), ELECTION_PK);
             do_tally();
           }

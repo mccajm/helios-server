@@ -719,23 +719,7 @@ class Tally(HeliosObject):
       decryption_proof.append(question_proof)
     
     return decrypted_tally, decryption_proof
-
-  def verify_decryption_proofs_iterative(self, decryption_factors, decryption_proofs, public_key, challenge_generator, answer, question=0):
-    """
-    decryption_factors is a list of lists of dec factors
-    decryption_proofs are the corresponding proofs
-    public_key is, of course, the public key of the trustee
-    """
-    print "vdivdi"
-    # parse the proof
-    proof = algs.EGZKProof.fromJSONDict(decryption_proofs[question][answer])
-    print "vd proof: ", proof
-    # check that g, alpha, y, dec_factor is a DH tuple
-    if not proof.verify(public_key.g, answer_tally.alpha, public_key.y, int(decryption_factors[question][answer]), public_key.p, public_key.q, challenge_generator):
-      return False
-    
-    return True
-  
+ 
   def verify_decryption_proofs(self, decryption_factors, decryption_proofs, public_key, challenge_generator):
     """
     decryption_factors is a list of lists of dec factors

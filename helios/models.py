@@ -389,9 +389,13 @@ class Election(HeliosModel):
     combine decryption results for a particular question and answer
     """
     # gather the decryption factors
+    print "start combine_decryptions_iterative"
     trustees = Trustee.get_by_election(self)
-    decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
-    
+    try:
+      decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
+    except TypeError: # we don't have all of the factors yet
+      return
+    print "combine_decryptions_iterative didn't return early"
     self.result = (self.result or [[]])
     try:
       self.result[q].append(self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question))
@@ -401,7 +405,9 @@ class Election(HeliosModel):
 
     self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
 
+    print "presave combine_decryptions_iterative"
     self.save()
+    print "end combine_decryptions_iterative"
 
   def generate_voters_hash(self):
     """
@@ -1159,7 +1165,7 @@ class Trustee(HeliosModel):
     print "re computed"
     print re
     return re
-    
+
   def verify_decryption_proofs(self):
     """
     verify that the decryption proofs match the tally for the election
