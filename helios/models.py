@@ -344,14 +344,9 @@ class Election(HeliosModel):
     """
     print "OK, we be tallying!"
     tally = self.init_tally()
-    if self.election_type == 'auction':
-      print "this was an auction"
-      tally.find_winning_bid(self.voter_set.all(), verify_p=True)
-    else:
-      print "this wasnt an auction"
-      for voter in self.voter_set.all():
-        if voter.vote:
-          tally.add_vote(voter.vote, verify_p=False)
+    for voter in self.voter_set.all():
+      if voter.vote:
+        tally.add_vote(voter.vote, verify_p=False)
 
     self.encrypted_tally = tally
     self.save()    

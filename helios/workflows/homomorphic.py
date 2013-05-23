@@ -316,34 +316,6 @@ class Tally(WorkflowObject):
 
     self.num_tallied += 1
 
-  def find_winning_bid(self, voter_set, verify_p=True):
-    print "FINDING WINNING BID"
-    encrypted_votes = [voter.vote for voter in voter_set if voter.vote]
-    print repr(encrypted_votes)
-    # for each question
-    for question_num in range(len(self.questions)):
-      question = self.questions[question_num]
-      answers = question['answers']
-
-      winner_found = None
-      # for each possible answer to each question
-      for answer_num in range(len(answers)):
-        for encrypted_vote in encrypted_votes:
-          print repr(encrypted_vote)
-          # do we verify?
-          if verify_p:
-            if not encrypted_vote.verify(self.election):
-              raise Exception('Bad Vote')
-
-          # do the homomorphic addition into the tally
-          enc_vote_choice = encrypted_vote.encrypted_answers[question_num].choices[answer_num]
-          enc_vote_choice.pk = self.public_key
-          print type(encrypted_vote.encrypted_answers[question_num].choices[answer_num])
-          print type(self.tally[question_num][answer_num])
-          self.tally[question_num][answer_num] = encrypted_vote.encrypted_answers[question_num].choices[answer_num] * self.tally[question_num][answer_num]
-
-        self.num_tallied += 1
-
   def decryption_factors_and_proofs(self, sk):
     """
     returns an array of decryption factors and a corresponding array of decryption proofs.
