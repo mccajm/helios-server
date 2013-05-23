@@ -766,27 +766,4 @@ class Tally(HeliosObject):
       result.append(q_result)
     
     return result
-
-  def decrypt_from_factors_iterative(self, dec_factor_list, public_key, answer, question=0):
-    """
-    decrypt a particular value in a tally given decryption factors
-    
-    The decryption factors are a list of decryption factor sets, for each trustee.
-    Each decryption factor set is a list of lists of decryption factors (questions/answers).
-    """
-    # pre-compute a dlog table
-    dlog_table = DLogTable(base = public_key.g, modulus = public_key.p)
-    dlog_table.precompute(self.num_tallied)
-
-    raw_value = self.tally[question][answer].decrypt(dec_factor_list, public_key)
-
-    return dlog_table.lookup(raw_value)
-
-  def _process_value_in(self, field_name, field_value):
-    if field_name == 'tally':
-      return [[algs.EGCiphertext.fromJSONDict(a) for a in q] for q in field_value]
-      
-  def _process_value_out(self, field_name, field_value):
-    if field_name == 'tally':
-      return [[a.toJSONDict() for a in q] for q in field_value]    
         

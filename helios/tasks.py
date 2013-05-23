@@ -5,6 +5,7 @@ Celery queued tasks for Helios
 ben@adida.net
 """
 
+from django.core.cache import cache
 from celery.decorators import task
 
 from models import *
@@ -97,13 +98,27 @@ The encrypted tally for election %s has been computed.
 Helios
 """ % election.name)
                                 
-    if election.has_helios_trustee():
+    if election.has_helios_trustee() and election.election_type != "auction":
         tally_helios_decrypt.delay(election_id = election.id)
 
 @task()
 def tally_helios_decrypt(election_id):
     election = Election.objects.get(id = election_id)
     election.helios_trustee_decrypt()
+    election_notify_admin.delay(election_id = election_id,
+                                subject = 'Helios Decrypt',
+                                body = """
+Helios has decrypted its portion of the tally
+for election %s.
+
+--
+Helios
+""" % election.name)
+
+@task()
+def tally_helios_decrypt_iterative(election_id, answer, question=0):
+    election = Election.objects.get(id = election_id)
+    election.helios_trustee_decrypt_iterative(answer, question)
     election_notify_admin.delay(election_id = election_id,
                                 subject = 'Helios Decrypt',
                                 body = """

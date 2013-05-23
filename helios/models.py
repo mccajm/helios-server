@@ -386,6 +386,10 @@ class Election(HeliosModel):
     # gather the decryption factors
     print "start combine_decryptions_iterative"
     trustees = Trustee.get_by_election(self)
+    if self.has_helios_trustee():
+      ht = self.get_helios_trustee()
+      task.tally_helios_decrypt_iterative.delay(election_id=self.id)
+      
     try:
       decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
     except TypeError: # we don't have all of the factors yet
@@ -544,6 +548,38 @@ class Election(HeliosModel):
 
     trustee.decryption_factors = factors
     trustee.decryption_proofs = proof
+    trustee.save()
+
+  def helios_trustee_decrypt_iterative(self, answer, question=0):
+    import copy
+    tally = copy.deepcopy(self.encrypted_tally)
+    tally.tally = [[]] # We mark the end of the tally by an empty list
+    if answer < len(self.encrypted_tally.tally[question]):  # If we're still tallying, fill the list
+      tally.tally = [[q[answer]] for q in self.encrypted_tally.tally]
+    tally.init_election(self)
+
+    trustee = self.get_helios_trustee()
+    factors, proofs = tally.decryption_factors_and_proofs(trustee.secret_key)
+
+    trustee.decryption_factors = (trustee.decryption_factors or [[]])
+    print "trustee.decryption_factors: ", trustee.decryption_factors
+    for q, f in enumerate(factors):
+      try:
+        trustee.decryption_factors[q].append(f) # Add the factor
+      except IndexError:
+        trustee.decryption_factors.append([]) # Add the question
+        trustee.decryption_factors[q].append(f) # Add the factor
+    print "trustee.decryption_factors: ", trustee.decryption_factors
+
+    trustee.decryption_proofs = (trustee.decryption_proofs or [[]])
+    print "trustee.decryption_proofs: ", trustee.decryption_proofs
+    for q, f in enumerate(proofs):
+      try:
+        trustee.decryption_proofs[q].append(f) # Add the factor
+      except IndexError:
+        trustee.decryption_proofs.append([]) # Add the question
+        trustee.decryption_proofs[q].append(f) # Add the factor
+
     trustee.save()
 
   def append_log(self, text):

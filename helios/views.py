@@ -1088,7 +1088,7 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     trustee.decryption_proofs = (trustee.decryption_proofs or [])
     trustee.decryption_proofs.append([datatypes.LDObject.fromDict(proof, type_hint='legacy/EGZKProof').wrapped_obj for proof in factors_and_proofs['decryption_proofs'][0]])
 
-    if trustee.verify_decryption_proofs():
+    if trustee.verify_decryption_proofs_iterative():
       trustee.save()
 
       try:
@@ -1133,6 +1133,8 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     print "trustee.decryption_proofs: ", trustee.decryption_proofs
     trustee.save()
     print "we saved"
+    election.helios_trustee_decrypt_iterative(answer, question)
+    print "helios decrypted too!"
     # Verify what we were sent
     if trustee.verify_decryption_proofs_iterative(answer):
       print "dec proofs verified"
@@ -1148,6 +1150,9 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     answer = answer + 1
     print answer, len(election.encrypted_tally.tally[0])
     if answer < len(election.encrypted_tally.tally[0]):  # If we're still tallying
+      if election.result[0][answer-1] > 0:
+        print "we found a bid"
+        return SUCCESS
       if answer != 0 and election.result[0][answer-1] == None:
         print "please wait"
         return WAIT # We're still waiting for other trustees
@@ -1160,7 +1165,7 @@ def trustee_upload_decryption(request, election, trustee_uuid):
       print "MYTALLY: ", election_copy.encrypted_tally.tally    
       return HttpResponse(election_copy.encrypted_tally.toJSON(), mimetype='application/javascript')
     else:
-      return SUCCESS  # we found a winning bid or reached the end
+      return SUCCESS  # we reached the end
 
     return FAILURE
 
