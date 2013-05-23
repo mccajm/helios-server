@@ -433,12 +433,12 @@ class Tally(WorkflowObject):
     print "vdivdi"
     # parse the proof
     print "decryption_proofs: ", decryption_proofs
-    proof = decryption_proofs[question][0]
+    proof = decryption_proofs[question][answer]
     print "vd proof: ", proof, dir(proof)
     print "vdanswer: ", answer
     answer_tally = self.tally[question][answer]
     # check that g, alpha, y, dec_factor is a DH tuple
-    if not proof.verify(public_key.g, answer_tally.alpha, public_key.y, int(decryption_factors[question][0]), public_key.p, public_key.q, challenge_generator):
+    if not proof.verify(public_key.g, answer_tally.alpha, public_key.y, int(decryption_factors[question][answer]), public_key.p, public_key.q, challenge_generator):
       return False
     
     return True

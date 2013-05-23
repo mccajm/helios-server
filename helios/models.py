@@ -397,15 +397,23 @@ class Election(HeliosModel):
       return
     print "combine_decryptions_iterative didn't return early"
     self.result = (self.result or [[]])
+    app = self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question)
+    print "computed app"
     try:
-      self.result[q].append(self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question))
-    except IndexError:
+      print question, self.result
+      self.result[question].append(app)
+    except TypeError:
+      print "got a TypeError"
       self.result.append([])
-      self.result[q].append(self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question))
+      self.result[question].append(app)
+    except Exception:
+      print "got an ungaught exception"
+      raise
 
     self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
 
     print "presave combine_decryptions_iterative"
+    print self.uuid
     self.save()
     print "end combine_decryptions_iterative"
 

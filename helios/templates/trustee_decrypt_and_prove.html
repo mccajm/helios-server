@@ -61,6 +61,7 @@ function get_secret_key() {
 function do_tally() {
   $('#sk_section').hide();
   $('#waiting_div').show();
+  $('#result_textarea').html('');
   
   var secret_key = get_secret_key();
   var factors_and_proof = decrypt_and_prove_tally(TALLY, ELECTION_PK, secret_key);

@@ -1067,11 +1067,14 @@ def trustee_decrypt_and_prove_segment(request, election, trustee, answer):
 @election_view(frozen=True)
 def trustee_upload_decryption(request, election, trustee_uuid):
   print "upload called"
+  print election
+  print trustee_uuid
   if not _check_election_tally_type(election) or election.encrypted_tally == None:
     return FAILURE
 
   trustee = Trustee.get_by_election_and_uuid(election, trustee_uuid)
-
+  print "got trustee"
+  print request.POST['factors_and_proofs']
   factors_and_proofs = utils.from_json(request.POST['factors_and_proofs'])
 
   print "factors_and_proofs:", factors_and_proofs
@@ -1145,7 +1148,7 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     answer = answer + 1
     print answer, len(election.encrypted_tally.tally[0])
     if answer < len(election.encrypted_tally.tally[0]):  # If we're still tallying
-      if answer != 0 and election.encrypted_tally.result[0][answer-1] == None:
+      if answer != 0 and election.result[0][answer-1] == None:
         print "please wait"
         return WAIT # We're still waiting for other trustees
 
