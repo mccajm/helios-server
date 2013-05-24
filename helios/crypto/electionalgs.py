@@ -665,10 +665,12 @@ class Tally(HeliosObject):
     returns an array of decryption factors and a corresponding array of decryption proofs.
     makes the decryption factors into strings, for general Helios / JS compatibility.
     """
+    print "decryption_factors_and_proofs"
     # for all choices of all questions (double list comprehension)
     decryption_factors = []
     decryption_proof = []
-    
+ 
+    print self.questions
     for question_num, question in enumerate(self.questions):
       answers = question['answers']
       question_factors = []

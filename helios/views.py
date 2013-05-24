@@ -1088,7 +1088,7 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     trustee.decryption_proofs = (trustee.decryption_proofs or [])
     trustee.decryption_proofs.append([datatypes.LDObject.fromDict(proof, type_hint='legacy/EGZKProof').wrapped_obj for proof in factors_and_proofs['decryption_proofs'][0]])
 
-    if trustee.verify_decryption_proofs_iterative():
+    if trustee.verify_decryption_proofs():
       trustee.save()
 
       try:
@@ -1107,57 +1107,61 @@ def trustee_upload_decryption(request, election, trustee_uuid):
     print "got 1"
     factors = [datatypes.LDObject.fromDict(factor, type_hint='core/BigInteger').wrapped_obj for factor in factors_and_proofs['decryption_factors'][0]]
     print "factors: ", factors
-    trustee.decryption_factors = (trustee.decryption_factors or [[]])
-    print "trustee.decryption_factors: ", trustee.decryption_factors
-    for q, f in enumerate(factors):
-      try:
-        trustee.decryption_factors[q].append(f) # Add the factor
-      except IndexError:
-        trustee.decryption_factors.append([]) # Add the question
-        trustee.decryption_factors[q].append(f) # Add the factor
-    print "trustee.decryption_factors: ", trustee.decryption_factors
+    if trustee.decryption_factors == None:
+      trustee.decryption_factors = [[]]
+      trustee.decryption_proofs = [[]]
 
-    print "got 2"
-    # each proof needs to be deserialized
-    proofs = [datatypes.LDObject.fromDict(proof, type_hint='legacy/EGZKProof').wrapped_obj for proof in factors_and_proofs['decryption_proofs'][0]]
-    print "proofs: ", proofs
-    trustee.decryption_proofs = (trustee.decryption_proofs or [[]])
+    if len(trustee.decryption_factors[0]) == answer:
+      print "trustee.decryption_factors: ", trustee.decryption_factors
+      for q, f in enumerate(factors):
+        try:
+          trustee.decryption_factors[q].append(f) # Add the factor
+        except IndexError:
+          trustee.decryption_factors.append([]) # Add the question
+          trustee.decryption_factors[q].append(f) # Add the factor
+      print "trustee.decryption_factors: ", trustee.decryption_factors
 
-    print "trustee.decryption_proofs: ", trustee.decryption_proofs
-    for q, f in enumerate(proofs):
-      try:
-        trustee.decryption_proofs[q].append(f) # Add the factor
-      except IndexError:
-        trustee.decryption_proofs.append([]) # Add the question
-        trustee.decryption_proofs[q].append(f) # Add the factor
-    print "trustee.decryption_proofs: ", trustee.decryption_proofs
-    trustee.save()
-    print "we saved"
-    election.helios_trustee_decrypt_iterative(answer, question)
-    print "helios decrypted too!"
-    # Verify what we were sent
-    if trustee.verify_decryption_proofs_iterative(answer):
-      print "dec proofs verified"
-      election.combine_decryptions_iterative(answer)
-    else:
-      print "dec proofs didn't verify"
-      trustee.decryption_proofs = None
-      trustee.decryption_factors = None
-      trustee.save()
-      return FAILURE
+      print "got 2"
+      # each proof needs to be deserialized
+      proofs = [datatypes.LDObject.fromDict(proof, type_hint='legacy/EGZKProof').wrapped_obj for proof in factors_and_proofs['decryption_proofs'][0]]
+      print "proofs: ", proofs
+
+      print "trustee.decryption_proofs: ", trustee.decryption_proofs
+      for q, f in enumerate(proofs):
+        try:
+          trustee.decryption_proofs[q].append(f) # Add the factor
+        except IndexError:
+          trustee.decryption_proofs.append([]) # Add the question
+          trustee.decryption_proofs[q].append(f) # Add the factor
+      print "trustee.decryption_proofs: ", trustee.decryption_proofs
+
+      # Verify what we were sent
+      if trustee.verify_decryption_proofs_iterative(answer):
+        print "dec proofs verified"
+        trustee.save()
+      else:
+        print "dec proofs didn't verify"
+        trustee.decryption_proofs = None
+        trustee.decryption_factors = None
+        trustee.save()
+        return FAILURE
+
+    election.combine_decryptions_iterative(answer)
 
     # Do we need to send anything new?
-    answer = answer + 1
-    print answer, len(election.encrypted_tally.tally[0])
-    if answer < len(election.encrypted_tally.tally[0]):  # If we're still tallying
-      if election.result[0][answer-1] > 0:
+    print election.result
+    if len(election.result[0]) > answer:
+      if election.result[0][answer] > 0:
         print "we found a bid"
         return SUCCESS
-      if answer != 0 and election.result[0][answer-1] == None:
-        print "please wait"
-        return WAIT # We're still waiting for other trustees
+    else:
+      print "please wait"
+      return WAIT # We're still waiting for other trustees
 
-      print "Returned 1"
+    print "Returned 1"
+    answer = answer+1
+    print answer+1, len(election.encrypted_tally.tally[0])
+    if answer < len(election.encrypted_tally.tally[0]):  # If we're still tallying
       import copy
       election_copy = copy.deepcopy(election)
       election_copy.encrypted_tally.tally = [[q[answer]] for q in election.encrypted_tally.tally]

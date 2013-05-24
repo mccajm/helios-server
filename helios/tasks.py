@@ -14,7 +14,6 @@ import signals
 
 import copy
 
-
 @task()
 def cast_vote_verify_and_store(cast_vote_id, status_update_message=None, **kwargs):
     cast_vote = CastVote.objects.get(id = cast_vote_id)
@@ -99,7 +98,9 @@ Helios
 """ % election.name)
                                 
     if election.has_helios_trustee() and election.election_type != "auction":
+        print "Did the Helios decryption all in one go no auction"
         tally_helios_decrypt.delay(election_id = election.id)
+    # TODO: auction only helios trustees
 
 @task()
 def tally_helios_decrypt(election_id):
@@ -117,6 +118,8 @@ Helios
 
 @task()
 def tally_helios_decrypt_iterative(election_id, answer, question=0):
+    print "tasks.tally_helios_decrypt_iterative"
+    print election_id, answer, question
     election = Election.objects.get(id = election_id)
     election.helios_trustee_decrypt_iterative(answer, question)
     election_notify_admin.delay(election_id = election_id,

@@ -368,7 +368,7 @@ class Election(HeliosModel):
     """
     combine all of the decryption results
     """
-    
+    print "WRONG combine_decryptions called!"
     # gather the decryption factors
     trustees = Trustee.get_by_election(self)
     decryption_factors = [t.decryption_factors for t in trustees]
@@ -385,29 +385,47 @@ class Election(HeliosModel):
     """
     # gather the decryption factors
     print "start combine_decryptions_iterative"
+    self.result = (self.result or [[]])
     trustees = Trustee.get_by_election(self)
+    print trustees
+
     if self.has_helios_trustee():
+      print "we have a helios trustee"
       ht = self.get_helios_trustee()
-      task.tally_helios_decrypt_iterative.delay(election_id=self.id)
-      
+      print "got the helios trustee", ht, dir(ht)
+      if ht.decryption_factors is None:
+        ht.decryption_factors = [[]]
+        ht.decryption_proofs = [[]]
+
+      if len(ht.decryption_factors[question]) == answer:
+        print self.id
+        self.encrypted_tally.tally_helios_decrypt_iterative(self.id, answer)
+        print "spawned the task"
+        return
+
+    print "lets combine!"
     try:
       decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
-    except TypeError: # we don't have all of the factors yet
+    except IndexError: # we don't have all of the factors yet
+      print "we don't have all of the factors yet - IndexError"
       return
+    except TypeError:
+      print "we don't have all of the factors yet - TypeError"
+      return
+
     print "combine_decryptions_iterative didn't return early"
-    self.result = (self.result or [[]])
     app = self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question)
     print "computed app"
-    try:
-      print question, self.result
-      self.result[question].append(app)
-    except TypeError:
-      print "got a TypeError"
+
+    print question, self.result, apps
+
+    if len(self.result) == question:
       self.result.append([])
+
+    if len(self.result[question]) == answer:
+      print question, self.result, app
       self.result[question].append(app)
-    except Exception:
-      print "got an ungaught exception"
-      raise
+      print question, self.result, app
 
     self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
 
@@ -551,34 +569,32 @@ class Election(HeliosModel):
     trustee.save()
 
   def helios_trustee_decrypt_iterative(self, answer, question=0):
-    import copy
-    tally = copy.deepcopy(self.encrypted_tally)
-    tally.tally = [[]] # We mark the end of the tally by an empty list
-    if answer < len(self.encrypted_tally.tally[question]):  # If we're still tallying, fill the list
-      tally.tally = [[q[answer]] for q in self.encrypted_tally.tally]
-    tally.init_election(self)
+    print "entered helios_trustee_decrypt_iterative"
+
+    self.encrypted_tally.init_election(self)
+    print "init_election"
 
     trustee = self.get_helios_trustee()
-    factors, proofs = tally.decryption_factors_and_proofs(trustee.secret_key)
-
+    print "got helios trustee"
+    print trustee.secret_key
+    factor, proof = self.encrypted_tally.decryption_factors_and_proofs_iterative(trustee.secret_key, answer, question)
+    print "tally.decryption_factors_and_proofs(trustee.secret_key)"
     trustee.decryption_factors = (trustee.decryption_factors or [[]])
     print "trustee.decryption_factors: ", trustee.decryption_factors
-    for q, f in enumerate(factors):
-      try:
-        trustee.decryption_factors[q].append(f) # Add the factor
-      except IndexError:
-        trustee.decryption_factors.append([]) # Add the question
-        trustee.decryption_factors[q].append(f) # Add the factor
+    try:
+      trustee.decryption_factors[question].append(factor) # Add the factor
+    except IndexError:
+      trustee.decryption_factors.append([]) # Add the question
+      trustee.decryption_factors[question].append(factor) # Add the factor
     print "trustee.decryption_factors: ", trustee.decryption_factors
 
     trustee.decryption_proofs = (trustee.decryption_proofs or [[]])
     print "trustee.decryption_proofs: ", trustee.decryption_proofs
-    for q, f in enumerate(proofs):
-      try:
-        trustee.decryption_proofs[q].append(f) # Add the factor
-      except IndexError:
-        trustee.decryption_proofs.append([]) # Add the question
-        trustee.decryption_proofs[q].append(f) # Add the factor
+    try:
+      trustee.decryption_proofs[question].append(proof) # Add the factor
+    except IndexError:
+      trustee.decryption_proofs.append([]) # Add the question
+      trustee.decryption_proofs[question].append(proof) # Add the factor
 
     trustee.save()
 
@@ -630,7 +646,14 @@ class Election(HeliosModel):
         return []
     else:
       # assumes that anything non-absolute is relative
-      return [counts[0][0]]    
+      return [counts[0][0]]
+
+  @classmethod
+  def auction_winner(cls, result):
+    """
+    determining the winner for one question
+    """
+    print len(result)-1
 
   @property
   def winners(self):
@@ -639,7 +662,11 @@ class Election(HeliosModel):
     returns an array of winners for each question, aka an array of arrays.
     assumes that if there is a max to the question, that's how many winners there are.
     """
-    return [self.one_question_winner(self.questions[i], self.result[i], self.num_cast_votes) for i in range(len(self.questions))]
+    if self.election_type == "auction":
+      print self.result
+      return self.auction_winner(self.result[0])
+    else:
+      return [self.one_question_winner(self.questions[i], self.result[i], self.num_cast_votes) for i in range(len(self.questions))]
     
   @property
   def pretty_result(self):
@@ -652,18 +679,24 @@ class Election(HeliosModel):
     raw_result = self.result
     prettified_result = []
 
-    # loop through questions
-    for i in range(len(self.questions)):
-      q = self.questions[i]
-      pretty_question = []
-      
-      # go through answers
-      for j in range(len(q['answers'])):
-        a = q['answers'][j]
-        count = raw_result[i][j]
-        pretty_question.append({'answer': a, 'count': count, 'winner': (j in winners[i])})
-        
+    if election.election_type == "auction":
+      print "auction!"
+      a = q['answers'][winners]
+      pretty_question.append({'answer': a, 'count': raw_result[0][winners], 'winner': (winners)})
       prettified_result.append({'question': q['short_name'], 'answers': pretty_question})
+    else:
+      # loop through questions
+      for i in range(len(self.questions)):
+        q = self.questions[i]
+        pretty_question = []
+
+        # go through answers
+        for j in range(len(q['answers'])):
+          a = q['answers'][j]
+          count = raw_result[i][j]
+          pretty_question.append({'answer': a, 'count': count, 'winner': (j in winners[i])})
+          
+        prettified_result.append({'question': q['short_name'], 'answers': pretty_question})
 
     return prettified_result
     
