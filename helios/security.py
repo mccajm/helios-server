@@ -92,7 +92,7 @@ def election_view(**checks):
   def election_view_decorator(func):
     def election_view_wrapper(request, election_uuid=None, *args, **kw):
       election = get_election_by_uuid(election_uuid)
-
+      print election
       if not election:
         raise Http404
 

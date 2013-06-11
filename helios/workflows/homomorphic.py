@@ -498,6 +498,11 @@ class Tally(WorkflowObject):
     print election_id, answer, question
     tasks.tally_helios_decrypt_iterative.delay(election_id, answer, question)
 
+  def tally_helios_only_decrypt_iterative(self, election_id, question=0):
+    print "Tally.tally_helios_decrypt_iterative"
+    print election_id, question
+    tasks.tally_helios_only_decrypt_iterative.delay(election_id, question)
+
   def _process_value_in(self, field_name, field_value):
     if field_name == 'tally':
       return [[algs.EGCiphertext.fromJSONDict(a) for a in q] for q in field_value]

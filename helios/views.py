@@ -623,7 +623,7 @@ def one_election_cast_confirm(request, election):
   if user and not voter and election.openreg:
     voter = _register_voter(election, user)
     
-  # tallied election, no vote casting
+  # tallied election, no vote castingf
   if election.encrypted_tally or election.result:
     return render_template(request, 'election_tallied', {'election': election})
     
@@ -1041,9 +1041,9 @@ def trustee_decrypt_and_prove(request, election, trustee):
     return HttpResponseRedirect(reverse(one_election_view,args=[election.uuid]))
 
   if election.election_type == 'auction':
-    return trustee_decrypt_and_prove_segment(request, election, trustee, 0)
+    return HttpResponseRedirect(reverse(trustee_decrypt_and_prove_segment, args=[election.uuid, trustee.uuid, 0]))
 
-  return render_template(request, 'trustee_decrypt_and_prove', {'election': election, 'trustee': trustee, 'answer': 0})
+  return render_template(request, 'trustee_decrypt_and_prove', {'election': election, 'trustee': trustee})
 
 @trustee_check_segment
 def trustee_decrypt_and_prove_segment(request, election, trustee, answer):

@@ -417,7 +417,7 @@ class Election(HeliosModel):
     app = self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question)
     print "computed app"
 
-    print question, self.result, apps
+    print question, self.result, app
 
     if len(self.result) == question:
       self.result.append([])
@@ -433,6 +433,9 @@ class Election(HeliosModel):
     print self.uuid
     self.save()
     print "end combine_decryptions_iterative"
+
+  def decrypt_and_prove_helios_only(self):
+      self.encrypted_tally.tally_helios_only_decrypt_iterative(self.id)
 
   def generate_voters_hash(self):
     """
@@ -649,11 +652,30 @@ class Election(HeliosModel):
       return [counts[0][0]]
 
   @classmethod
-  def auction_winner(cls, result):
+  def one_question_winner(cls, question, result, num_cast_votes):
     """
     determining the winner for one question
     """
-    print len(result)-1
+    # sort the answers , keep track of the index
+    counts = sorted(enumerate(result), key=lambda(x): x[1])
+    counts.reverse()
+    
+    the_max = question['max'] or 1
+    the_min = question['min'] or 0
+
+    # if there's a max > 1, we assume that the top MAX win
+    if the_max > 1:
+      return [c[0] for c in counts[:the_max]]
+
+    # if max = 1, then depends on absolute or relative
+    if question['result_type'] == 'absolute':
+      if counts[0][1] >=  (num_cast_votes/2 + 1):
+        return [counts[0][0]]
+      else:
+        return []
+    else:
+      # assumes that anything non-absolute is relative
+      return [counts[0][0]]    
 
   @property
   def winners(self):
@@ -662,11 +684,7 @@ class Election(HeliosModel):
     returns an array of winners for each question, aka an array of arrays.
     assumes that if there is a max to the question, that's how many winners there are.
     """
-    if self.election_type == "auction":
-      print self.result
-      return self.auction_winner(self.result[0])
-    else:
-      return [self.one_question_winner(self.questions[i], self.result[i], self.num_cast_votes) for i in range(len(self.questions))]
+    return [self.one_question_winner(self.questions[i], self.result[i], self.num_cast_votes) for i in range(len(self.questions))]
     
   @property
   def pretty_result(self):
@@ -679,22 +697,27 @@ class Election(HeliosModel):
     raw_result = self.result
     prettified_result = []
 
-    if election.election_type == "auction":
-      print "auction!"
-      a = q['answers'][winners]
-      pretty_question.append({'answer': a, 'count': raw_result[0][winners], 'winner': (winners)})
-      prettified_result.append({'question': q['short_name'], 'answers': pretty_question})
+    if self.election_type == "auction":
+      j = len(raw_result[0])-1
+      a = self.questions[0]['answers'][j]
+      count = raw_result[0][j]
+      pretty_question = [{'answer': a, 'count': count, 'winner': True}]
+      prettified_result.append({'question': self.questions[0]['short_name'], 'answers': pretty_question})
     else:
       # loop through questions
       for i in range(len(self.questions)):
         q = self.questions[i]
         pretty_question = []
-
+        
         # go through answers
         for j in range(len(q['answers'])):
           a = q['answers'][j]
           count = raw_result[i][j]
           pretty_question.append({'answer': a, 'count': count, 'winner': (j in winners[i])})
+
+          print "j", j
+          if j == len(raw_result[i])-1:
+            break
           
         prettified_result.append({'question': q['short_name'], 'answers': pretty_question})
 
@@ -870,6 +893,8 @@ class Voter(HeliosModel):
                        null=True)
   vote_hash = models.CharField(max_length = 100, null=True)
   cast_at = models.DateTimeField(auto_now_add=False, null=True)
+
+  randomness = None
 
   class Meta:
     unique_together = (('election', 'voter_login_id'))
@@ -1135,6 +1160,9 @@ class CastVote(HeliosModel):
       issues.append("the vote's election UUID does not match the election for which this vote is being cast")
     
     return issues
+
+  def report_randomness(self, r):
+    self.randomness = r
     
 class AuditedBallot(models.Model):
   """

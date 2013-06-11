@@ -73,7 +73,13 @@ this {{election.election_type}} is <u>not</u> featured on the front page.
 {% endif %}
 	({% if election.questions %}{{election.questions|length}}{% else %}0{% endif %})</a>
 &nbsp;&nbsp;|&nbsp;&nbsp;
-<a href="{% url helios.views.voters_list_pretty election.uuid %}">voters &amp; ballots</a>
+<a href="{% url helios.views.voters_list_pretty election.uuid %}">
+  {% if election.election_type == "auction" %}
+    bidders &amp; bids
+  {% else %}
+    voters &amp; ballots
+  {% endif %}
+</a>
 &nbsp;&nbsp;|&nbsp;&nbsp;
 <a href="{% url helios.views.list_trustees_view election.uuid %}">trustees ({{trustees|length}})</a>
 </p>
@@ -164,18 +170,25 @@ all voters will be notified that the tally is ready.
 
 {% if election.result %}
 <span class="highlight-box round">
-    This election is complete.
+    This {% if election.election_type == "auction" %}auction{% else %}election{% endif %} is complete.
 </span><br />
 
 <br />
-<h3 class="highlight-box">Tally</h3>
+<h3 class="highlight-box">{% if election.election_type == "auction" %}Result{% else %}Tally{% endif %}</h3>
 {% for question in election.pretty_result %}
-<b><span style="font-size:0.8em;">Question #{{forloop.counter}}</span><br />{{question.question}}</b><br />
-<table class="pretty" style="width: auto;">
-{% for answer in question.answers %}
-<tr><td style="padding-right:80px;{% if answer.winner %}font-weight:bold;{% endif %}">{{answer.answer}}</td><td align="right" style="{% if answer.winner %}font-weight:bold;{% endif %}">{{answer.count}}</td></tr>
-{% endfor %}
-</table>
+{% if election.election_type != "auction" %}
+<b><span style="font-size:0.8em;">Question #{{forloop.counter}}</span><br />
+{% endif %}
+{{question.question}}</b><br />
+{% if election.election_type == "auction" %}
+  The winning bid is for price {{question.answers.0.answer}}.
+{% else %}
+  <table class="pretty" style="width: auto;">
+  {% for answer in question.answers %}
+  <tr><td style="padding-right:80px;{% if answer.winner %}font-weight:bold;{% endif %}">{{answer.answer}}</td><td align="right" style="{% if answer.winner %}font-weight:bold;{% endif %}">{{answer.count}}</td></tr>
+  {% endfor %}
+  </table>
+{% endif %}
 {% endfor %}
 
 {% else %}
