@@ -665,12 +665,10 @@ class Tally(HeliosObject):
     returns an array of decryption factors and a corresponding array of decryption proofs.
     makes the decryption factors into strings, for general Helios / JS compatibility.
     """
-    print "decryption_factors_and_proofs"
     # for all choices of all questions (double list comprehension)
     decryption_factors = []
     decryption_proof = []
- 
-    print self.questions
+
     for question_num, question in enumerate(self.questions):
       answers = question['answers']
       question_factors = []
@@ -769,3 +767,10 @@ class Tally(HeliosObject):
     
     return result
         
+  def _process_value_in(self, field_name, field_value):
+    if field_name == 'tally':
+      return [[algs.EGCiphertext.fromJSONDict(a) for a in q] for q in field_value]
+      
+  def _process_value_out(self, field_name, field_value):
+    if field_name == 'tally':
+      return [[a.toJSONDict() for a in q] for q in field_value] 

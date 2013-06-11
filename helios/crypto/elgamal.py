@@ -491,26 +491,18 @@ class ZKProof(object):
     """
     Verify a DH tuple proof
     """
-    print "we be verifying"
-    print little_g
-    print little_h
-    print big_g
-    print big_h
-    print p
-    print q
-    print challenge_generator
     # check that little_g^response = A * big_g^challenge
     first_check = (pow(little_g, self.response, p) == ((pow(big_g, self.challenge, p) * self.commitment['A']) % p))
-    print first_check
+
     # check that little_h^response = B * big_h^challenge
     second_check = (pow(little_h, self.response, p) == ((pow(big_h, self.challenge, p) * self.commitment['B']) % p))
-    print second_check
+
     # check the challenge?
     third_check = True
     
     if challenge_generator:
       third_check = (self.challenge == challenge_generator(self.commitment))
-    print third_check
+
     return (first_check and second_check and third_check)
   
 class ZKDisjunctiveProof:

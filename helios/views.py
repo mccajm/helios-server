@@ -623,7 +623,7 @@ def one_election_cast_confirm(request, election):
   if user and not voter and election.openreg:
     voter = _register_voter(election, user)
     
-  # tallied election, no vote castingf
+  # tallied election, no vote casting
   if election.encrypted_tally or election.result:
     return render_template(request, 'election_tallied', {'election': election})
     

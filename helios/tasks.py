@@ -5,7 +5,6 @@ Celery queued tasks for Helios
 ben@adida.net
 """
 
-from django.core.cache import cache
 from celery.decorators import task
 
 from models import *
