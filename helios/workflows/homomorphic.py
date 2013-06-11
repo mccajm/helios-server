@@ -299,7 +299,6 @@ class Tally(WorkflowObject):
       self.add_vote(vote, verify_p)
     
   def add_vote(self, encrypted_vote, verify_p=True):
-    print "NORMAL TALLYING"
     # do we verify?
     if verify_p:
       if not encrypted_vote.verify(self.election):
@@ -324,12 +323,10 @@ class Tally(WorkflowObject):
     returns an array of decryption factors and a corresponding array of decryption proofs.
     makes the decryption factors into strings, for general Helios / JS compatibility.
     """
-    print "other one"
     # for all choices of all questions (double list comprehension)
     decryption_factors = []
     decryption_proof = []
     
-    print self.questions
     for question_num, question in enumerate(self.questions):
       answers = question['answers']
       question_factors = []
@@ -354,16 +351,12 @@ class Tally(WorkflowObject):
     returns an array of decryption factors and a corresponding array of decryption proofs.
     makes the decryption factors into strings, for general Helios / JS compatibility.
     """
-    print "other one"
     # for all choices of all questions (double list comprehension)
     decryption_factors = []
     decryption_proof = []
     
-    print "generating the proof"
-    print self.tally[question][answer]
     dec_factor, proof = sk.decryption_factor_and_proof(self.tally[question][answer])
     
-    print dec_factor, proof
     return dec_factor, proof
     
   def decrypt_and_prove(self, sk, discrete_logs=None):
@@ -404,7 +397,6 @@ class Tally(WorkflowObject):
     decryption_proofs are the corresponding proofs
     public_key is, of course, the public key of the trustee
     """
-    print len(self.tally[0]), decryption_proofs
     # go through each one
     for q_num, q in enumerate(self.tally):
       for a_num, answer_tally in enumerate(q):
@@ -424,12 +416,8 @@ class Tally(WorkflowObject):
     decryption_proofs are the corresponding proofs
     public_key is, of course, the public key of the trustee
     """
-    print "vdivdi"
     # parse the proof
-    print "decryption_proofs: ", decryption_proofs
     proof = decryption_proofs[question][answer]
-    print "vd proof: ", proof, dir(proof)
-    print "vdanswer: ", answer
     answer_tally = self.tally[question][answer]
     # check that g, alpha, y, dec_factor is a DH tuple
     if not proof.verify(public_key.g, answer_tally.alpha, public_key.y, int(decryption_factors[question][answer]), public_key.p, public_key.q, challenge_generator):
@@ -467,7 +455,6 @@ class Tally(WorkflowObject):
           plaintext = dlog_table.lookup(raw_value)
           q_result.append(plaintext)
 
-          print type(plaintext)
           # TODO FIX if self.election.election_type == 'auction':
           if plaintext > 0: # we found a bid so lets stop here
             winner_found = True
@@ -483,24 +470,17 @@ class Tally(WorkflowObject):
     The decryption factors are a list of decryption factor sets, for each trustee.
     Each decryption factor set is a list of lists of decryption factors (questions/answers).
     """
-    print "decrypt_from_factors_iterative: ", answer, question, dec_factor_list
     # pre-compute a dlog table
     dlog_table = DLogTable(base = public_key.g, modulus = public_key.p)
     dlog_table.precompute(self.num_tallied)
 
     raw_value = self.tally[question][answer].decrypt(dec_factor_list, public_key)
-    print "raw_value", raw_value
-    print "decrypt_from_factors_iterative", dlog_table.lookup(raw_value)
     return dlog_table.lookup(raw_value)
 
   def tally_helios_decrypt_iterative(self, election_id, answer, question=0):
-    print "Tally.tally_helios_decrypt_iterative"
-    print election_id, answer, question
     tasks.tally_helios_decrypt_iterative.delay(election_id, answer, question)
 
   def tally_helios_only_decrypt_iterative(self, election_id, question=0):
-    print "Tally.tally_helios_decrypt_iterative"
-    print election_id, question
     tasks.tally_helios_only_decrypt_iterative.delay(election_id, question)
 
   def _process_value_in(self, field_name, field_value):

@@ -342,7 +342,6 @@ class Election(HeliosModel):
     """
     tally the election, assuming votes already verified
     """
-    print "OK, we be tallying!"
     tally = self.init_tally()
     for voter in self.voter_set.all():
       if voter.vote:
@@ -368,7 +367,6 @@ class Election(HeliosModel):
     """
     combine all of the decryption results
     """
-    print "WRONG combine_decryptions called!"
     # gather the decryption factors
     trustees = Trustee.get_by_election(self)
     decryption_factors = [t.decryption_factors for t in trustees]
@@ -384,58 +382,36 @@ class Election(HeliosModel):
     combine decryption results for a particular question and answer
     """
     # gather the decryption factors
-    print "start combine_decryptions_iterative"
     self.result = (self.result or [[]])
     trustees = Trustee.get_by_election(self)
-    print trustees
 
     if self.has_helios_trustee():
-      print "we have a helios trustee"
       ht = self.get_helios_trustee()
-      print "got the helios trustee", ht, dir(ht)
       if ht.decryption_factors is None:
         ht.decryption_factors = [[]]
         ht.decryption_proofs = [[]]
 
       if len(ht.decryption_factors[question]) == answer:
-        print self.id
         self.encrypted_tally.tally_helios_decrypt_iterative(self.id, answer)
-        print "spawned the task"
         return
 
-    print "lets combine!"
     try:
       decryption_factors = [t.decryption_factors[question][answer] for t in trustees]
     except IndexError: # we don't have all of the factors yet
-      print "we don't have all of the factors yet - IndexError"
       return
-    except TypeError:
-      print "we don't have all of the factors yet - TypeError"
+    except TypeError: # we don't have all of the factors yet
       return
 
-    print "combine_decryptions_iterative didn't return early"
     app = self.encrypted_tally.decrypt_from_factors_iterative(decryption_factors, self.public_key, answer, question)
-    print "computed app"
-
-    print question, self.result, app
-
     if len(self.result) == question:
       self.result.append([])
 
     if len(self.result[question]) == answer:
-      print question, self.result, app
       self.result[question].append(app)
-      print question, self.result, app
 
     self.append_log(ElectionLog.DECRYPTIONS_COMBINED)
 
-    print "presave combine_decryptions_iterative"
-    print self.uuid
     self.save()
-    print "end combine_decryptions_iterative"
-
-  def decrypt_and_prove_helios_only(self):
-      self.encrypted_tally.tally_helios_only_decrypt_iterative(self.id)
 
   def generate_voters_hash(self):
     """
@@ -572,27 +548,19 @@ class Election(HeliosModel):
     trustee.save()
 
   def helios_trustee_decrypt_iterative(self, answer, question=0):
-    print "entered helios_trustee_decrypt_iterative"
-
     self.encrypted_tally.init_election(self)
-    print "init_election"
 
     trustee = self.get_helios_trustee()
-    print "got helios trustee"
-    print trustee.secret_key
     factor, proof = self.encrypted_tally.decryption_factors_and_proofs_iterative(trustee.secret_key, answer, question)
-    print "tally.decryption_factors_and_proofs(trustee.secret_key)"
     trustee.decryption_factors = (trustee.decryption_factors or [[]])
-    print "trustee.decryption_factors: ", trustee.decryption_factors
+
     try:
       trustee.decryption_factors[question].append(factor) # Add the factor
     except IndexError:
       trustee.decryption_factors.append([]) # Add the question
       trustee.decryption_factors[question].append(factor) # Add the factor
-    print "trustee.decryption_factors: ", trustee.decryption_factors
 
     trustee.decryption_proofs = (trustee.decryption_proofs or [[]])
-    print "trustee.decryption_proofs: ", trustee.decryption_proofs
     try:
       trustee.decryption_proofs[question].append(proof) # Add the factor
     except IndexError:
@@ -715,7 +683,6 @@ class Election(HeliosModel):
           count = raw_result[i][j]
           pretty_question.append({'answer': a, 'count': count, 'winner': (j in winners[i])})
 
-          print "j", j
           if j == len(raw_result[i])-1:
             break
           
@@ -1258,13 +1225,8 @@ class Trustee(HeliosModel):
     """
     verify that the decryption proofs match the tally for the election
     """
-    print "verify_decryption_proofs_iterative 1", self.decryption_factors, self.decryption_proofs, self.public_key, algs.EG_fiatshamir_challenge_generator, answer, question
-    print dir(self.election.encrypted_tally)
     # verify_decryption_proofs(self, decryption_factors, decryption_proofs, public_key, challenge_generator):
-    re = self.election.encrypted_tally.verify_decryption_proofs_iterative(self.decryption_factors, self.decryption_proofs, self.public_key, algs.EG_fiatshamir_challenge_generator, answer, question)
-    print "re computed"
-    print re
-    return re
+    return self.election.encrypted_tally.verify_decryption_proofs_iterative(self.decryption_factors, self.decryption_proofs, self.public_key, algs.EG_fiatshamir_challenge_generator, answer, question)
 
   def verify_decryption_proofs(self):
     """

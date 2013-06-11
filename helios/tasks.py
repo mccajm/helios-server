@@ -99,24 +99,9 @@ Helios
                                 
     if election.has_helios_trustee():
         if election.election_type != "auction":
-            print "Did the Helios decryption all in one go no auction"
             tally_helios_decrypt.delay(election_id = election.id)
         else:
-            tally_helios_only_decrypt.delay(election_id = election.id)
-
-@task()
-def tally_helios_only_decrypt(election_id):
-    election = Election.objects.get(id = election_id)
-    election.decrypt_and_prove_helios_only()
-    election_notify_admin.delay(election_id = election_id,
-                                subject = 'Helios Decrypt',
-                                body = """
-Helios has decrypted its portion of the tally
-for election %s.
-
---
-Helios
-""" % election.name)
+            tally_helios_only_decrypt_iterative.delay(election_id = election.id)
 
 @task()
 def tally_helios_decrypt(election_id):
@@ -134,8 +119,6 @@ Helios
 
 @task()
 def tally_helios_decrypt_iterative(election_id, answer, question=0):
-    print "tasks.tally_helios_decrypt_iterative"
-    print election_id, answer, question
     election = Election.objects.get(id = election_id)
     election.helios_trustee_decrypt_iterative(answer, question)
     election_notify_admin.delay(election_id = election_id,
@@ -150,8 +133,6 @@ Helios
 
 @task()
 def tally_helios_only_decrypt_iterative(election_id, question=0):
-    print "tasks.tally_helios_decrypt_iterative"
-    print election_id, question
     election = Election.objects.get(id = election_id)
     for answer in range(len(election.encrypted_tally.tally[question])):
         election.helios_trustee_decrypt_iterative(answer, question)
