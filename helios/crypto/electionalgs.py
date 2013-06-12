@@ -766,11 +766,11 @@ class Tally(HeliosObject):
       result.append(q_result)
     
     return result
-        
+
   def _process_value_in(self, field_name, field_value):
     if field_name == 'tally':
       return [[algs.EGCiphertext.fromJSONDict(a) for a in q] for q in field_value]
       
   def _process_value_out(self, field_name, field_value):
     if field_name == 'tally':
-      return [[a.toJSONDict() for a in q] for q in field_value] 
+      return [[a.toJSONDict() for a in q] for q in field_value]
