@@ -443,21 +443,12 @@ class Tally(WorkflowObject):
     for q_num, q in enumerate(self.tally):
       q_result = []
 
-      winner_found = False
       for a_num, a in enumerate(q):
-        if winner_found:
-          q_result.append(0)
-        else:
-          # coalesce the decryption factors into one list
-          dec_factor_list = [df[q_num][a_num] for df in decryption_factors]
-          raw_value = self.tally[q_num][a_num].decrypt(dec_factor_list, public_key)
-          
-          plaintext = dlog_table.lookup(raw_value)
-          q_result.append(plaintext)
-
-          # TODO FIX if self.election.election_type == 'auction':
-          if plaintext > 0: # we found a bid so lets stop here
-            winner_found = True
+        # coalesce the decryption factors into one list
+        dec_factor_list = [df[q_num][a_num] for df in decryption_factors]
+        raw_value = self.tally[q_num][a_num].decrypt(dec_factor_list, public_key)
+        
+        q_result.append(dlog_table.lookup(raw_value))
 
       result.append(q_result)
     
